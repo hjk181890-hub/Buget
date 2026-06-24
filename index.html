@@ -398,7 +398,7 @@ async function load(){
     const p=new URLSearchParams(location.search);
     if(p.get('text')){
       const txt=p.get('text');const rows=parseLines(txt);history.replaceState(null,'',location.pathname);
-      if(rows.length>=2){S.modal={kind:'bulk',mode:'add',text:txt,rows};}
+      if(rows.length>=2){S.modal={kind:'bulk',mode:'add',text:txt,rows:markDups(rows)};}
       else if(rows.length===1){const r=rows[0];S.modal={kind:'tx',mode:'add',amount:r.amount,category:r.category,date:r.date,memo:r.memo,receipt:null,fx:null,quick:true,confirmDel:false};}
       else{S.modal={kind:'tx',mode:'add',amount:0,category:CATS[0][0],date:todayISO(),memo:'',receipt:null,fx:null,quick:true,confirmDel:false};}
       renderModal();
@@ -652,12 +652,16 @@ function accountModal(md){return `${grab()}<div class="shtitle">${md.mode==='add
    <div class="fld"><div class="flab">계좌 이름</div><input class="inp" placeholder="예: 주거래 통장, 비상금" maxlength="20" value="${esc(md.name)}" oninput="FIN.nameIn(this.value)"></div>
    <div class="fld"><div class="flab">잔액</div><div class="amtbox"><span class="won">₩</span><input inputmode="numeric" placeholder="0" value="${md.amount?md.amount.toLocaleString('ko-KR'):''}" oninput="FIN.amtIn(this)"></div></div>
    ${actions(md,'추가','저장')}${delBtn(md,'계좌')}`;}
-function bulkModal(md){const rows=md.rows||[];const list=rows.length?`<div class="brk" style="margin-top:12px;padding:4px 16px">${rows.map((r,i)=>`<div class="bulkrow"><span class="bi" style="background:${colorOfCat(r.category)}"></span><div class="bm">${esc(r.memo||r.category)}<div class="bc" onclick="FIN.bulkPickCat(${i})" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px">${esc(r.category)} ▾ · ${r.date.slice(5)}</div></div><div class="ba num">${fmt(r.amount)}</div><button class="bx" onclick="FIN.bulkRemove(${i})">✕</button></div>${md.editIdx===i?`<div class="chips" style="padding:4px 2px 12px">${CATS.map(([n,c])=>`<button class="chip ${r.category===n?'act':''}" onclick="FIN.bulkSetCat(${i},'${n}')"><i style="background:${c}"></i>${esc(n)}</button>`).join('')}</div>`:''}`).join('')}</div>`:'';
+function normM(x){return (x||'').toLowerCase().replace(/\([^)]*\)/g,'').replace(/[^0-9a-z가-힣]/g,'');}
+function merchantSim(a,b){const na=normM(a),nb=normM(b);if(!na||!nb)return false;if(na===nb)return true;return (na.length>=2&&nb.length>=2&&(na.includes(nb)||nb.includes(na)));}
+function rowDup(r,others){let maybe=false;for(const o of others){if(o.amount===r.amount&&o.date===r.date){if(merchantSim(o.memo,r.memo))return 'exact';maybe=true;}}return maybe?'maybe':null;}
+function markDups(rows){if(!rows)return rows;const existing=S.tx.filter(t=>t.type!=='income').map(t=>({date:t.date,amount:t.amount,memo:t.memo||''}));const seen=[];rows.forEach(r=>{const d=rowDup(r,existing.concat(seen));r.dup=d;r.skip=(d==='exact');seen.push({date:r.date,amount:r.amount,memo:r.memo||''});});return rows;}
+function bulkModal(md){const rows=md.rows||[];const list=rows.length?`<div class="brk" style="margin-top:12px;padding:4px 16px">${rows.map((r,i)=>`<div class="bulkrow" style="${r.skip?'opacity:.45':''}"><span class="bi" style="background:${colorOfCat(r.category)}"></span><div class="bm">${esc(r.memo||r.category)}${r.dup==='exact'?` <span style="color:var(--expense);font-weight:800;font-size:11px">중복</span>`:r.dup==='maybe'?` <span style="color:#C08A52;font-weight:800;font-size:11px">중복?</span>`:''}<div class="bc" onclick="FIN.bulkPickCat(${i})" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px">${esc(r.category)} ▾ · ${r.date.slice(5)}${r.dup==='exact'?` · <span onclick="event.stopPropagation();FIN.bulkToggleSkip(${i})" style="color:var(--ink);text-decoration:underline">${r.skip?'포함':'제외'}</span>`:''}</div></div><div class="ba num">${fmt(r.amount)}</div><button class="bx" onclick="FIN.bulkRemove(${i})">✕</button></div>${md.editIdx===i?`<div class="chips" style="padding:4px 2px 12px">${CATS.map(([n,c])=>`<button class="chip ${r.category===n?'act':''}" onclick="FIN.bulkSetCat(${i},'${n}')"><i style="background:${c}"></i>${esc(n)}</button>`).join('')}</div>`:''}`).join('')}</div>`:'';
    return `${grab()}<div class="shtitle">여러 건 붙여넣기</div><div class="shsub">카드 승인문자를 한 줄에 하나씩 붙여넣고 분석</div>
    <textarea class="ta" placeholder="예) 신한카드 12,000원 스타벅스" oninput="FIN.bulkText(this.value)">${esc(md.text||'')}</textarea>
    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="flex:1" onclick="FIN.bulkClip(false)">📋 클립보드에서 가져오기</button><button class="btn ghost" style="flex:1" onclick="FIN.bulkParse()">분석</button></div>
-   ${rows.length?`<div class="flab" style="margin:16px 0 0 3px">${rows.length}건 인식됨 · 분류는 추가 후 수정 가능</div>`:''}${list}
-   ${rows.length?`<button class="btn primary" style="width:100%;margin-top:14px" onclick="FIN.bulkAdd()">${rows.length}건 모두 추가</button>`:''}
+   ${rows.length?`<div class="flab" style="margin:16px 0 0 3px">${rows.length}건 인식${rows.filter(r=>r.skip).length?` · 중복 ${rows.filter(r=>r.skip).length}건 제외`:''} · 분류 탭하여 수정</div>`:''}${list}
+   ${(()=>{const n=rows.filter(r=>!r.skip).length;return n?`<button class="btn primary" style="width:100%;margin-top:14px" onclick="FIN.bulkAdd()">${n}건 추가${rows.length-n?` (중복 ${rows.length-n} 제외)`:''}</button>`:`<div class="flab" style="text-align:center;margin-top:14px;color:var(--faint)">추가할 새 내역이 없어요 (모두 중복)</div>`;})()}
    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="FIN.close()">닫기</button>`;}
 function renderModal(){const ov=document.getElementById('ov'),sheet=document.getElementById('sheet'),md=S.modal;if(!md){ov.classList.remove('on');return;}sheet.innerHTML=md.kind==='income'?incomeModal(md):md.kind==='fixed'?fixedModal(md):md.kind==='budget'?budgetModal(md):md.kind==='account'?accountModal(md):md.kind==='bulk'?bulkModal(md):txModal(md);ov.classList.add('on');}
 function refreshSave(){const b=document.querySelector('.btn.primary');if(b&&S.modal)b.disabled=!validOf(S.modal);}
@@ -714,14 +718,15 @@ const FIN={
   fxOrig(v){S.modal.fx=S.modal.fx||{};const n=parseFloat((v||'').replace(/[^0-9.]/g,''));S.modal.fx.orig=isNaN(n)?0:n;if(S.modal.fx.orig&&S.modal.fx.rate)S.modal.amount=Math.round(S.modal.fx.orig*S.modal.fx.rate);renderModal();},
   fxRate(v){S.modal.fx=S.modal.fx||{};const n=parseFloat((v||'').replace(/[^0-9.]/g,''));S.modal.fx.rate=isNaN(n)?0:n;if(S.modal.fx.orig&&S.modal.fx.rate)S.modal.amount=Math.round(S.modal.fx.orig*S.modal.fx.rate);renderModal();},
   bulkOpen(){S.modal={kind:'bulk',mode:'add',text:'',rows:[],editIdx:null};renderModal();FIN.bulkClip(true);},
-  bulkClip(silent){try{if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(t=>{if(!t||!S.modal||S.modal.kind!=='bulk')return;if((S.modal.text||'').trim())return;const rows=parseLines(t);if(rows.length>=1){S.modal.text=t;S.modal.rows=rows;S.modal.editIdx=null;renderModal();}else if(!silent){alert('클립보드에서 카드내역을 못 찾았어요. 직접 붙여넣어 주세요.');}}).catch(()=>{if(!silent)alert('클립보드 접근이 막혀 있어요. 칸을 길게 눌러 붙여넣어 주세요.');});}else if(!silent){alert('이 브라우저는 자동 붙여넣기를 지원하지 않아요. 직접 붙여넣어 주세요.');}}catch(e){}},
+  bulkClip(silent){try{if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(t=>{if(!t||!S.modal||S.modal.kind!=='bulk')return;if((S.modal.text||'').trim())return;const rows=parseLines(t);if(rows.length>=1){S.modal.text=t;S.modal.rows=markDups(rows);S.modal.editIdx=null;renderModal();}else if(!silent){alert('클립보드에서 카드내역을 못 찾았어요. 직접 붙여넣어 주세요.');}}).catch(()=>{if(!silent)alert('클립보드 접근이 막혀 있어요. 칸을 길게 눌러 붙여넣어 주세요.');});}else if(!silent){alert('이 브라우저는 자동 붙여넣기를 지원하지 않아요. 직접 붙여넣어 주세요.');}}catch(e){}},
   bulkText(v){S.modal.text=v;},
-  bulkParse(){S.modal.rows=parseLines(S.modal.text);renderModal();},
+  bulkParse(){S.modal.rows=markDups(parseLines(S.modal.text));renderModal();},
   bulkRemove(i){S.modal.rows.splice(i,1);if(S.modal.editIdx!=null&&S.modal.editIdx>=S.modal.rows.length)S.modal.editIdx=null;renderModal();},
   bulkPickCat(i){S.modal.editIdx=S.modal.editIdx===i?null:i;renderModal();},
   bulkSetCat(i,n){S.modal.rows[i].category=n;S.modal.editIdx=null;renderModal();},
+  bulkToggleSkip(i){S.modal.rows[i].skip=!S.modal.rows[i].skip;renderModal();},
   searchIn(v){S.q=v;render();},
-  bulkAdd(){const rows=S.modal.rows||[];rows.forEach(r=>{S.tx.push({id:newId(),amount:r.amount,category:r.category,date:r.date,memo:r.memo,receipt:null,fx:null,type:'expense'});if(r.memo)rememberCat(r.memo,r.category);});persistTx();S.modal=null;S.view='expense';S.exTab='irregular';render();},
+  bulkAdd(){const rows=(S.modal.rows||[]).filter(r=>!r.skip);if(!rows.length){S.modal=null;render();return;}rows.forEach(r=>{S.tx.push({id:newId(),amount:r.amount,category:r.category,date:r.date,memo:r.memo,receipt:null,fx:null,type:'expense'});if(r.memo)rememberCat(r.memo,r.category);});persistTx();S.modal=null;S.view='expense';S.exTab='irregular';render();},
   acctAdd(){S.modal={kind:'account',mode:'add',name:'',amount:0};renderModal();},
   acctEdit(id){const a=S.accounts.find(x=>x.id===id);if(!a)return;S.modal={kind:'account',mode:'edit',id,name:a.name,amount:a.balance||0,confirmDel:false};renderModal();},
   cardTargetIn(el){const d=el.value.replace(/[^0-9]/g,'');S.settings.cardTarget=d?parseInt(d,10):0;el.value=d?parseInt(d,10).toLocaleString('ko-KR'):'';persistSet();},
