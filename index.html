@@ -630,7 +630,7 @@ function accountModal(md){return `${grab()}<div class="shtitle">${md.mode==='add
 function bulkModal(md){const rows=md.rows||[];const list=rows.length?`<div class="brk" style="margin-top:12px;padding:4px 16px">${rows.map((r,i)=>`<div class="bulkrow"><span class="bi" style="background:${colorOfCat(r.category)}"></span><div class="bm">${esc(r.memo||r.category)}<div class="bc" onclick="FIN.bulkPickCat(${i})" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px">${esc(r.category)} ▾ · ${r.date.slice(5)}</div></div><div class="ba num">${fmt(r.amount)}</div><button class="bx" onclick="FIN.bulkRemove(${i})">✕</button></div>${md.editIdx===i?`<div class="chips" style="padding:4px 2px 12px">${CATS.map(([n,c])=>`<button class="chip ${r.category===n?'act':''}" onclick="FIN.bulkSetCat(${i},'${n}')"><i style="background:${c}"></i>${esc(n)}</button>`).join('')}</div>`:''}`).join('')}</div>`:'';
    return `${grab()}<div class="shtitle">여러 건 붙여넣기</div><div class="shsub">카드 승인문자를 한 줄에 하나씩 붙여넣고 분석</div>
    <textarea class="ta" placeholder="예) 신한카드 12,000원 스타벅스" oninput="FIN.bulkText(this.value)">${esc(md.text||'')}</textarea>
-   <button class="btn ghost" style="width:100%;margin-top:10px" onclick="FIN.bulkParse()">분석</button>
+   <div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost" style="flex:1" onclick="FIN.bulkClip(false)">📋 클립보드에서 가져오기</button><button class="btn ghost" style="flex:1" onclick="FIN.bulkParse()">분석</button></div>
    ${rows.length?`<div class="flab" style="margin:16px 0 0 3px">${rows.length}건 인식됨 · 분류는 추가 후 수정 가능</div>`:''}${list}
    ${rows.length?`<button class="btn primary" style="width:100%;margin-top:14px" onclick="FIN.bulkAdd()">${rows.length}건 모두 추가</button>`:''}
    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="FIN.close()">닫기</button>`;}
@@ -688,7 +688,8 @@ const FIN={
   fxCur(v){S.modal.fx=S.modal.fx||{};S.modal.fx.cur=v;},
   fxOrig(v){S.modal.fx=S.modal.fx||{};const n=parseFloat((v||'').replace(/[^0-9.]/g,''));S.modal.fx.orig=isNaN(n)?0:n;if(S.modal.fx.orig&&S.modal.fx.rate)S.modal.amount=Math.round(S.modal.fx.orig*S.modal.fx.rate);renderModal();},
   fxRate(v){S.modal.fx=S.modal.fx||{};const n=parseFloat((v||'').replace(/[^0-9.]/g,''));S.modal.fx.rate=isNaN(n)?0:n;if(S.modal.fx.orig&&S.modal.fx.rate)S.modal.amount=Math.round(S.modal.fx.orig*S.modal.fx.rate);renderModal();},
-  bulkOpen(){S.modal={kind:'bulk',text:'',rows:[]};renderModal();},
+  bulkOpen(){S.modal={kind:'bulk',mode:'add',text:'',rows:[],editIdx:null};renderModal();FIN.bulkClip(true);},
+  bulkClip(silent){try{if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(t=>{if(!t||!S.modal||S.modal.kind!=='bulk')return;if((S.modal.text||'').trim())return;const rows=parseLines(t);if(rows.length>=1){S.modal.text=t;S.modal.rows=rows;S.modal.editIdx=null;renderModal();}else if(!silent){alert('클립보드에서 카드내역을 못 찾았어요. 직접 붙여넣어 주세요.');}}).catch(()=>{if(!silent)alert('클립보드 접근이 막혀 있어요. 칸을 길게 눌러 붙여넣어 주세요.');});}else if(!silent){alert('이 브라우저는 자동 붙여넣기를 지원하지 않아요. 직접 붙여넣어 주세요.');}}catch(e){}},
   bulkText(v){S.modal.text=v;},
   bulkParse(){S.modal.rows=parseLines(S.modal.text);renderModal();},
   bulkRemove(i){S.modal.rows.splice(i,1);if(S.modal.editIdx!=null&&S.modal.editIdx>=S.modal.rows.length)S.modal.editIdx=null;renderModal();},
