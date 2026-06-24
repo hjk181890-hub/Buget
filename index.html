@@ -13,7 +13,7 @@
 <style>
   :root{--bg:#F4EEF2;--card:#FFFFFF;--ink:#2A1B28;--sub:#82707D;--faint:#AE9FA9;--line:#EADFE6;--line2:#E0D2DB;--income:#6E3A5C;--expense:#A85E7D;--shadow:0 1px 2px rgba(42,27,40,.05),0 8px 24px rgba(42,27,40,.07);}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%;}
   body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5;}
   .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
   .wrap{max-width:480px;margin:0 auto;padding:0 18px 120px;}
@@ -214,6 +214,7 @@
   .bulkrow .bx{border:none;background:transparent;color:var(--faint);font-size:16px;cursor:pointer;padding:0 2px;}
   .ta{width:100%;min-height:120px;border:1.5px solid var(--line2);border-radius:13px;background:var(--card);font-family:inherit;font-size:14px;color:var(--ink);padding:13px 15px;outline:none;resize:vertical;line-height:1.6;}
   .ta:focus{border-color:var(--ink);}
+  .amtbox input,.wagebox input,.hbox input{min-width:0;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
   button:focus-visible,input:focus-visible,.item:focus-visible,.jname:focus-visible,.navcard:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
 </style>
@@ -229,7 +230,7 @@
 const K_INCOME='fin_income_v1',K_QTY='fin_qty_v1',K_FIXED='fin_fixed_v1',K_TX='fin_tx_v1',K_RECV='fin_received_v1',K_BUD='fin_budgets_v1',K_SET='fin_settings_v1',K_ACCT='fin_accounts_v1',K_LEARN='fin_learned_v1',K_SEED='fin_seed_v1';
 const PAL=['#2E6B53','#4F8C6E','#6B8E9E','#A87B9E','#C2625A','#B5896A','#9088B2','#5FA39A','#C9A463','#8C8678'];
 const CATS=[['식비','#B5896A'],['카페·간식','#C9A463'],['교통','#5FA39A'],['레슨·전공','#C2625A'],['반주·연주','#B06A4E'],['악보·교재','#9088B2'],['미용·뷰티','#CB7E96'],['쇼핑·의류','#A87B9E'],['콘텐츠·촬영','#5E8C7D'],['문화·여가','#7A9B76'],['구독·멤버십','#7E9BB0'],['의료·건강','#86A36F'],['주거·공과금','#8C8678'],['경조사','#C99A52'],['기타','#9E9A92']];
-const CATKW=[['카페·간식',['스타벅스','스벅','투썸','이디야','메가','커피','카페','공차','빽다방','파리바게','뚜레쥬르','베이커리','도넛','컴포즈','폴바셋']],['식비',['배민','배달의민족','요기요','쿠팡이츠','김밥','분식','식당','맥도날','버거','롯데리아','맘스터치','마라','국밥','치킨','피자','편의점','gs25','cu','세븐일레븐','이마트24','한식','일식','중식']],['교통',['택시','카카오t','지하철','버스','교통','주유','충전','기차','코레일','srt','ktx','대리','하이패스','톨']],['미용·뷰티',['올리브영','다이소','화장품','뷰티','세포라','네일','미용실','헤어','피부','왁싱','시코르','아모레']],['쇼핑·의류',['무신사','지그재그','에이블리','유니클로','자라','의류','쇼핑','쿠팡','29cm','브랜디','아울렛','신세계','롯데백화점']],['문화·여가',['cgv','메가박스','롯데시네마','영화','공연','예매','인터파크','yes24','교보문고','노래방','전시','콘서트','티켓']],['구독·멤버십',['넷플릭스','유튜브','스포티파이','애플','구독','멤버십','chatgpt','오픈ai','melon','멜론','왓챠','디즈니','icloud','구글','노션']],['의료·건강',['약국','병원','의원','치과','한의원','클리닉','건강','피트니스','헬스','요가','필라테스']],['주거·공과금',['통신','skt','kt','유플','요금','관리비','월세','전기','가스','수도','보험','도시가스']],['레슨·전공',['레슨','반주','성악','보컬','코치','아카데미']],['악보·교재',['악보','교재','도서']]];
+const CATKW=[['카페·간식',['스타벅스','스벅','투썸','이디야','메가','커피','카페','공차','빽다방','파리바게','뚜레쥬르','베이커리','도넛','컴포즈','폴바셋']],['식비',['배민','배달의민족','요기요','쿠팡이츠','김밥','분식','식당','맥도날','버거','롯데리아','맘스터치','마라','국밥','치킨','피자','편의점','gs25','cu','세븐일레븐','이마트24','한식','일식','중식','정육','정육점','마트','농협','하나로','반찬','마켓']],['교통',['택시','카카오t','지하철','버스','교통','주유','충전','기차','코레일','srt','ktx','대리','하이패스','톨','석유','주유소']],['미용·뷰티',['올리브영','다이소','화장품','뷰티','세포라','네일','미용실','헤어','피부','왁싱','시코르','아모레']],['쇼핑·의류',['무신사','지그재그','에이블리','유니클로','자라','의류','쇼핑','쿠팡','29cm','브랜디','아울렛','신세계','롯데백화점']],['문화·여가',['cgv','메가박스','롯데시네마','영화','공연','예매','인터파크','yes24','교보문고','노래방','전시','콘서트','티켓']],['구독·멤버십',['넷플릭스','유튜브','스포티파이','애플','구독','멤버십','chatgpt','오픈ai','melon','멜론','왓챠','디즈니','icloud','구글','노션']],['의료·건강',['약국','병원','의원','치과','한의원','클리닉','건강','피트니스','헬스','요가','필라테스']],['주거·공과금',['통신','skt','kt','유플','요금','관리비','월세','전기','가스','수도','보험','도시가스']],['레슨·전공',['레슨','반주','성악','보컬','코치','아카데미']],['악보·교재',['악보','교재','도서']]];
 const WD=['일','월','화','수','목','금','토'];
 const now=new Date();
 let taxMode='net';
@@ -247,7 +248,48 @@ const newId=()=>Date.now()+'_'+Math.floor(Math.random()*1e5);
 const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function compressImage(file,cb){try{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const max=1000;let w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);let d=null;try{d=c.toDataURL('image/jpeg',0.5);}catch(e){}URL.revokeObjectURL(url);cb(d);};img.onerror=()=>{URL.revokeObjectURL(url);cb(null);};img.src=url;}catch(e){cb(null);}}
-function parseLines(text){const lines=(text||'').split(/[\n\r]+/).map(s=>s.trim()).filter(Boolean);const out=[];lines.forEach(line=>{const nums=[...line.matchAll(/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,})\s*원?/g)].map(m=>parseInt(m[1].replace(/,/g,''),10)).filter(n=>!isNaN(n)&&n>0&&n<100000000);if(!nums.length)return;const amount=Math.max(...nums);let memo=line.replace(/[0-9,]+\s*원?/g,' ').replace(/(승인|취소|일시불|할부|체크|카드|결제|사용|누적|잔액|원)/g,' ').replace(/[\[\]\(\)\*]/g,' ').replace(/\s+/g,' ').trim().slice(0,24);const cat=learnedCat(memo)||guessCat(line)||CATS[14][0];out.push({amount,category:cat,memo,date:todayISO()});});return out;}
+function parseLines(text){
+  const raw=(text||'').split(/[\n\r]+/).map(s=>s.trim()).filter(Boolean);
+  const timeRe=/^\d{1,2}:\d{2}$/;
+  const dateRe=/(\d{1,2})\s*월\s*(\d{1,2})\s*일/;
+  const negRe=/[-−–ー]\s*([\d][\d,]*)\s*원?/;
+  const hasNeg=raw.some(l=>negRe.test(l));
+  const out=[];
+  let cy=new Date().getFullYear(),cm=null,cd=null,merchant=[];
+  function flush(amt){
+    let memo=merchant.join(' ').replace(/\s+/g,' ').trim().slice(0,24);
+    const date=(cm&&cd)?(cy+'-'+pad(cm)+'-'+pad(cd)):todayISO();
+    const cat=learnedCat(memo)||guessCat(memo)||CATS[14][0];
+    if(amt>0&&amt<100000000) out.push({amount:amt,category:cat,memo:memo||cat,date});
+    merchant=[];
+  }
+  if(hasNeg){
+    for(let line of raw){
+      const dm=line.match(dateRe); if(dm){cm=+dm[1];cd=+dm[2];continue;}
+      if(timeRe.test(line)) continue;
+      const neg=line.match(negRe);
+      if(neg){
+        const before=line.slice(0,neg.index).replace(/[-−–ー]/g,'').trim();
+        if(before) merchant.push(before);
+        flush(parseInt(neg[1].replace(/,/g,''),10));
+        continue;
+      }
+      if(/^[\d,]+\s*원?$/.test(line)) continue;
+      merchant.push(line);
+    }
+    if(out.length) return out;
+  }
+  raw.forEach(line=>{
+    if(dateRe.test(line)||timeRe.test(line)) return;
+    const nums=[...line.matchAll(/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,})\s*원?/g)].map(m=>parseInt(m[1].replace(/,/g,''),10)).filter(n=>!isNaN(n)&&n>0&&n<100000000);
+    if(!nums.length) return;
+    const amount=Math.max(...nums);
+    let memo=line.replace(/[0-9,]+\s*원?/g,' ').replace(/(승인|취소|일시불|할부|체크|카드|결제|사용|누적|잔액|원)/g,' ').replace(/[\[\]\(\)\*]/g,' ').replace(/\s+/g,' ').trim().slice(0,24);
+    const cat=learnedCat(memo)||guessCat(line)||CATS[14][0];
+    out.push({amount,category:cat,memo,date:todayISO()});
+  });
+  return out;
+}
 
 function payDateForMonth(o,y,m){
   const timing=o.payTiming||'next'; let py=y,pm=m;
@@ -330,8 +372,17 @@ async function load(){
   }catch(e){}
   try{render();}catch(e){document.getElementById('app').innerHTML='<div class="hero"><div class="lab">표시 중 문제가 생겼어요</div><div class="gtext" style="margin-top:8px">새로고침해도 안 되면 알려주세요.</div></div>';}
   try{
-    const q=parseQuick();
-    if(q){S.modal={kind:'tx',mode:'add',amount:q.amount,category:q.category,date:q.date,memo:q.memo,confirmDel:false,quick:true};history.replaceState(null,'',location.pathname);renderModal();}
+    const p=new URLSearchParams(location.search);
+    if(p.get('text')){
+      const txt=p.get('text');const rows=parseLines(txt);history.replaceState(null,'',location.pathname);
+      if(rows.length>=2){S.modal={kind:'bulk',mode:'add',text:txt,rows};}
+      else if(rows.length===1){const r=rows[0];S.modal={kind:'tx',mode:'add',amount:r.amount,category:r.category,date:r.date,memo:r.memo,receipt:null,fx:null,quick:true,confirmDel:false};}
+      else{S.modal={kind:'tx',mode:'add',amount:0,category:CATS[0][0],date:todayISO(),memo:'',receipt:null,fx:null,quick:true,confirmDel:false};}
+      renderModal();
+    }else{
+      const q=parseQuick();
+      if(q){S.modal={kind:'tx',mode:'add',amount:q.amount,category:q.category,date:q.date,memo:q.memo,receipt:null,fx:null,confirmDel:true&&false,quick:true};history.replaceState(null,'',location.pathname);renderModal();}
+    }
   }catch(e){}
 }
 
