@@ -234,7 +234,7 @@
 const K_INCOME='fin_income_v1',K_QTY='fin_qty_v1',K_FIXED='fin_fixed_v1',K_TX='fin_tx_v1',K_RECV='fin_received_v1',K_BUD='fin_budgets_v1',K_SET='fin_settings_v1',K_ACCT='fin_accounts_v1',K_LEARN='fin_learned_v1',K_SEED='fin_seed_v1',K_SNAP='fin_snap_v1';
 const PAL=['#2E6B53','#4F8C6E','#6B8E9E','#A87B9E','#C2625A','#B5896A','#9088B2','#5FA39A','#C9A463','#8C8678'];
 const CATS=[['식비','#B5896A'],['카페·간식','#C9A463'],['교통','#5FA39A'],['레슨·전공','#C2625A'],['반주·연주','#B06A4E'],['악보·교재','#9088B2'],['미용·뷰티','#CB7E96'],['쇼핑·의류','#A87B9E'],['콘텐츠·촬영','#5E8C7D'],['문화·여가','#7A9B76'],['구독·멤버십','#7E9BB0'],['의료·건강','#86A36F'],['주거·공과금','#8C8678'],['경조사','#C99A52'],['기타','#9E9A92']];
-const CATKW=[['카페·간식',['스타벅스','스벅','투썸','이디야','메가','커피','카페','공차','빽다방','파리바게','뚜레쥬르','베이커리','도넛','컴포즈','폴바셋']],['식비',['배민','배달의민족','요기요','쿠팡이츠','김밥','분식','식당','맥도날','버거','롯데리아','맘스터치','마라','국밥','치킨','피자','편의점','gs25','cu','세븐일레븐','이마트24','한식','일식','중식','정육','정육점','마트','농협','하나로','반찬','마켓']],['교통',['택시','카카오t','지하철','버스','교통','주유','충전','기차','코레일','srt','ktx','대리','하이패스','톨','석유','주유소']],['미용·뷰티',['올리브영','다이소','화장품','뷰티','세포라','네일','미용실','헤어','피부','왁싱','시코르','아모레']],['쇼핑·의류',['무신사','지그재그','에이블리','유니클로','자라','의류','쇼핑','쿠팡','29cm','브랜디','아울렛','신세계','롯데백화점']],['문화·여가',['cgv','메가박스','롯데시네마','영화','공연','예매','인터파크','yes24','교보문고','노래방','전시','콘서트','티켓']],['구독·멤버십',['넷플릭스','유튜브','스포티파이','애플','구독','멤버십','chatgpt','오픈ai','melon','멜론','왓챠','디즈니','icloud','구글','노션']],['의료·건강',['약국','병원','의원','치과','한의원','클리닉','건강','피트니스','헬스','요가','필라테스']],['주거·공과금',['통신','skt','kt','유플','요금','관리비','월세','전기','가스','수도','보험','도시가스']],['레슨·전공',['레슨','반주','성악','보컬','코치','아카데미']],['악보·교재',['악보','교재','도서']]];
+const CATKW=[['카페·간식',['스타벅스','스벅','투썸','이디야','메가','커피','카페','공차','빽다방','파리바게','뚜레쥬르','베이커리','도넛','컴포즈','폴바셋']],['식비',['배민','배달의민족','요기요','쿠팡이츠','김밥','분식','식당','맥도날','버거','롯데리아','맘스터치','마라','국밥','치킨','피자','편의점','gs25','cu','세븐일레븐','이마트24','한식','일식','중식','정육','정육점','마트','농협','하나로','반찬','마켓','닭발','안주','족발','곱창','떡볶이']],['교통',['택시','카카오t','지하철','버스','교통','주유','충전','기차','코레일','srt','ktx','대리','하이패스','톨','석유','주유소','철도','korail','코레일','승차권','한국철도']],['미용·뷰티',['올리브영','다이소','화장품','뷰티','세포라','네일','미용실','헤어','피부','왁싱','시코르','아모레','에타퓨르','toner','세럼','앰플','선크림']],['쇼핑·의류',['무신사','지그재그','에이블리','유니클로','자라','의류','쇼핑','쿠팡','29cm','브랜디','아울렛','신세계','롯데백화점','카카오스타일','스타일','w컨셉','wconcept','퀸잇','하프클럽']],['문화·여가',['cgv','메가박스','롯데시네마','영화','공연','예매','인터파크','yes24','교보문고','노래방','전시','콘서트','티켓']],['구독·멤버십',['넷플릭스','netflix','유튜브','youtube','스포티파이','spotify','애플','apple','app store','apple music','itunes','구독','멤버십','chatgpt','오픈ai','melon','멜론','왓챠','watcha','디즈니','disney','icloud','구글','노션','prime']],['의료·건강',['약국','병원','의원','치과','한의원','클리닉','건강','피트니스','헬스','요가','필라테스']],['주거·공과금',['통신','skt','kt','유플','요금','관리비','월세','전기','가스','수도','보험','도시가스']],['레슨·전공',['레슨','반주','성악','보컬','코치','아카데미']],['악보·교재',['악보','교재','도서']]];
 const WD=['일','월','화','수','목','금','토'];
 const now=new Date();
 let taxMode='net';
@@ -253,51 +253,57 @@ const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function compressImage(file,cb){try{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const max=1000;let w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);let d=null;try{d=c.toDataURL('image/jpeg',0.5);}catch(e){}URL.revokeObjectURL(url);cb(d);};img.onerror=()=>{URL.revokeObjectURL(url);cb(null);};img.src=url;}catch(e){cb(null);}}
 function parseLines(text){
-  const raw=(text||'').split(/[\n\r]+/).map(s=>s.trim()).filter(Boolean);
-  const timeRe=/^\d{1,2}:\d{2}$/;
-  const dateRe=/(\d{1,2})\s*월\s*(\d{1,2})\s*일/;
-  const negRe=/[-−–ー]\s*([\d][\d,]*)\s*원?/;
-  const hasNeg=raw.some(l=>negRe.test(l));
+  let raw=(text||'').split(/[\n\r]+/).map(x=>x.replace(/\s*(오전|오후)\s*\d{1,2}:\d{2}\s*$/,'').trim()).filter(Boolean);
   const out=[];
-  let cy=new Date().getFullYear(),cm=null,cd=null;
-  function addText(arr,line){
-    line=line.replace(/[₩]/g,'').trim(); if(!line||!/[가-힣A-Za-z]/.test(line))return;
-    if(arr.length){var last=arr[arr.length-1];var op=(last.match(/\(/g)||[]).length,cl=(last.match(/\)/g)||[]).length;if(op>cl){arr[arr.length-1]=last+' '+line;return;}var lo=(line.match(/\(/g)||[]).length,lc=(line.match(/\)/g)||[]).length;if(lc>lo){arr[arr.length-1]=last+' '+line;return;}}
-    arr.push(line);
-  }
-  if(hasNeg){
-    const amounts=[],texts=[];
-    for(let line of raw){
-      const dm=line.match(dateRe); if(dm){cm=+dm[1];cd=+dm[2];continue;}
-      if(timeRe.test(line)) continue;
-      const neg=line.match(negRe);
-      if(neg){const before=line.slice(0,neg.index);addText(texts,before);amounts.push(parseInt(neg[1].replace(/,/g,''),10));continue;}
-      if(/^[\d,]+\s*원?$/.test(line)) continue;
-      addText(texts,line);
+  function clean(t){return (t||'')
+    .replace(/토스뱅크\s*(체크)?카드/g,'').replace(/\([^)]*토스뱅크[^)]*\)/g,'')
+    .replace(/체크카드|신용카드|일시불|할부|결제완료|결제|승인|취소|누적|잔액/g,'')
+    .replace(/외\s*\d+건/g,'').replace(/[|·]/g,' ').replace(/^[-−–\s]+/,'')
+    .replace(/\s+/g,' ').trim();}
+  function merchantFrom(line){const m=line.split('|');return clean(m.length>1?m.slice(1).join(' '):m[0]);}
+  function push(amt,memo,date){if(amt>0&&amt<100000000){const mm=(memo||'').slice(0,24);const cat=learnedCat(mm)||guessCat(mm)||CATS[14][0];out.push({amount:amt,category:cat,memo:mm||cat,date:date||todayISO()});}}
+
+  // ---- 형식 1: 토스뱅크 알림 (금액 줄 다음 "카드 | 가맹점" 줄) ----
+  if(/토스뱅크/.test(text)&&/원\s*결제/.test(text)){
+    for(let i=0;i<raw.length;i++){
+      const pm=raw[i].match(/([\d][\d,]*)\s*원\s*결제/); if(!pm)continue;
+      const amt=parseInt(pm[1].replace(/,/g,''),10);
+      let merchant='';
+      for(let j=i+1;j<Math.min(i+4,raw.length);j++){if(raw[j].includes('|')){merchant=merchantFrom(raw[j]);break;}}
+      push(amt,merchant);
     }
-    if(amounts.length){
-      const date=(cm&&cd)?(cy+'-'+pad(cm)+'-'+pad(cd)):todayISO();
-      for(let i=0;i<amounts.length;i++){
-        const amt=amounts[i]; if(!(amt>0&&amt<100000000))continue;
-        const memo=(texts[i]||'').slice(0,24);
-        const cat=learnedCat(memo)||guessCat(memo)||CATS[14][0];
-        out.push({amount:amt,category:cat,memo:memo||cat,date});
-      }
-      if(out.length) return out;
-    }
+    if(out.length)return out;
   }
+
+  // ---- 형식 2/3: 카카오페이 · 네이버페이 · 일반 (금액 바로 위 줄 = 가게명) ----
+  const noise=/(복권|출석|미라클|포인트\s*받기|포인트\s*뽑기|적립|당첨금|소비 복권|황금 복권|굵지 않은|내 자산|지출 내역|결제한 상품|스토어|발송예정|배송중|확인해보세요|긁어보세요|눌러서|누르고|누르기|써서 받았어요|n\s*pay|n\s*store|^결제완료$|받기$|뽑기$|클릭하고|찾아보세요)/i;
+  raw=raw.filter(l=>!noise.test(l));
+  const timeRe=/^\d{1,2}:\d{2}$/, payRe=/([-−–])?\s*([\d][\d,]*)\s*원\s*(결제|승인)?/;
+  let cy=new Date().getFullYear(),cm=null,cd=null,pending='';
+  const curDate=()=>(cm&&cd)?(cy+'-'+pad(cm)+'-'+pad(cd)):todayISO();
+  for(let line of raw){
+    let m;
+    if((m=line.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/))&&!payRe.test(line)){cm=+m[1];cd=+m[2];pending='';continue;}  // M월 D일
+    if((m=line.match(/(\d{1,2})일\s*[월화수목금토일]요일/))){cd=+m[1];pending='';continue;}                          // 카카오 일일헤더(합계 무시)
+    if((m=line.match(/^(\d{1,2})\s*월(?!\s*\d)/))){cm=+m[1];continue;}                                                 // 월 헤더
+    if(timeRe.test(line))continue;
+    if(/^잔액/.test(line))continue;
+    const pm=line.match(payRe);
+    if(pm){const d=line.match(/(\d{1,2})\s*\.\s*(\d{1,2})\s*\./);if(d){cm=+d[1];cd=+d[2];}push(parseInt(pm[2].replace(/,/g,''),10),pending,curDate());pending='';continue;}
+    if(/^[\d,]+\s*원?$/.test(line))continue;                                                                          // 잔액/숫자 줄
+    let mc=line.includes('|')?merchantFrom(line):clean(line);
+    if(mc&&/[가-힣A-Za-z]/.test(mc)){const o=(pending.match(/\(/g)||[]).length,c=(pending.match(/\)/g)||[]).length;pending=(pending&&o>c)?pending+' '+mc:mc;}
+  }
+  if(out.length)return out;
+  // ---- 폴백: 한 줄 단건 ----
   raw.forEach(line=>{
-    if(dateRe.test(line)||timeRe.test(line)) return;
+    if(dayHdr.test(line)||monDay.test(line)||timeRe.test(line)||/^잔액/.test(line))return;
     const nums=[...line.matchAll(/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,})\s*원?/g)].map(m=>parseInt(m[1].replace(/,/g,''),10)).filter(n=>!isNaN(n)&&n>0&&n<100000000);
-    if(!nums.length) return;
-    const amount=Math.max(...nums);
-    let memo=line.replace(/[0-9,]+\s*원?/g,' ').replace(/(승인|취소|일시불|할부|체크|카드|결제|사용|누적|잔액|원)/g,' ').replace(/[\[\]\(\)\*]/g,' ').replace(/\s+/g,' ').trim().slice(0,24);
-    const cat=learnedCat(memo)||guessCat(line)||CATS[14][0];
-    out.push({amount,category:cat,memo,date:todayISO()});
+    if(!nums.length)return;
+    push(Math.max(...nums),clean(line.replace(/[0-9,]+\s*원?/g,' ')));
   });
   return out;
 }
-
 function payDateForMonth(o,y,m){
   const timing=o.payTiming||'next'; let py=y,pm=m;
   if(timing==='next'){pm++;if(pm>11){pm=0;py++;}}
