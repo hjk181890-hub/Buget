@@ -253,55 +253,60 @@ const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function compressImage(file,cb){try{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const max=1000;let w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);let d=null;try{d=c.toDataURL('image/jpeg',0.5);}catch(e){}URL.revokeObjectURL(url);cb(d);};img.onerror=()=>{URL.revokeObjectURL(url);cb(null);};img.src=url;}catch(e){cb(null);}}
 function parseLines(text){
-  let raw=(text||'').split(/[\n\r]+/).map(x=>x.replace(/\s*(오전|오후)\s*\d{1,2}:\d{2}\s*$/,'').trim()).filter(Boolean);
+  let raw=(text||'').split(/[\n\r]+/).map(x=>x.replace(/^\s*(어제\s*)?(오전|오후)\s*\d{1,2}:\d{2}\s*$/,'').replace(/\s*(어제\s*)?(오전|오후)\s*\d{1,2}:\d{2}\s*$/,'').trim()).filter(Boolean);
   const out=[];
+  const noise=/(긁지\s*않은|복권|출석|미라클|포인트\s*받기|포인트\s*뽑기|적립|당첨금|소비 복권|황금 복권|굵지 않은|내 자산|지출 내역|결제한 상품|상품을 찾아|스토어|발송예정|배송중|확인해보세요|긁어보세요|눌러서|누르고|누르기|써서 받았어요|클릭하고|자주 산|중고|^n$|^u$|^nh$|^[•·]$|^✓$|^\d+$|^open$|받기$|뽑기$)/i;
   function clean(t){return (t||'')
-    .replace(/토스뱅크\s*(체크)?카드/g,'').replace(/\([^)]*토스뱅크[^)]*\)/g,'')
+    .replace(/잔액\s*[\d,]+\s*원/g,' ').replace(/\(토스뱅크[^)]*\)/g,'').replace(/토스뱅크\s*(체크)?카드/g,'')
     .replace(/체크카드|신용카드|일시불|할부|결제완료|결제|승인|취소|누적|잔액/g,'')
-    .replace(/외\s*\d+건/g,'').replace(/[|·]/g,' ').replace(/^[-−–\s]+/,'')
+    .replace(/외\s*\d+건/g,'').replace(/[|·>•]/g,' ').replace(/^[-−–\s.]+/,'').replace(/\s*\.\.\.$/,'')
     .replace(/\s+/g,' ').trim();}
-  function merchantFrom(line){const m=line.split('|');return clean(m.length>1?m.slice(1).join(' '):m[0]);}
-  function push(amt,memo,date){if(amt>0&&amt<100000000){const mm=(memo||'').slice(0,24);const cat=learnedCat(mm)||guessCat(mm)||CATS[14][0];out.push({amount:amt,category:cat,memo:mm||cat,date:date||todayISO()});}}
-
-  // ---- 형식 1: 토스뱅크 알림 (금액 줄 다음 "카드 | 가맹점" 줄) ----
-  if(/토스뱅크/.test(text)&&/원\s*결제/.test(text)){
-    for(let i=0;i<raw.length;i++){
-      const pm=raw[i].match(/([\d][\d,]*)\s*원\s*결제/); if(!pm)continue;
-      const amt=parseInt(pm[1].replace(/,/g,''),10);
-      let merchant='';
-      for(let j=i+1;j<Math.min(i+4,raw.length);j++){if(raw[j].includes('|')){merchant=merchantFrom(raw[j]);break;}}
-      push(amt,merchant);
-    }
-    if(out.length)return out;
-  }
-
-  // ---- 형식 2/3: 카카오페이 · 네이버페이 · 일반 (금액 바로 위 줄 = 가게명) ----
-  const noise=/(복권|출석|미라클|포인트\s*받기|포인트\s*뽑기|적립|당첨금|소비 복권|황금 복권|굵지 않은|내 자산|지출 내역|결제한 상품|스토어|발송예정|배송중|확인해보세요|긁어보세요|눌러서|누르고|누르기|써서 받았어요|n\s*pay|n\s*store|^결제완료$|받기$|뽑기$|클릭하고|찾아보세요)/i;
-  raw=raw.filter(l=>!noise.test(l));
-  const timeRe=/^\d{1,2}:\d{2}$/, payRe=/([-−–])?\s*([\d][\d,]*)\s*원\s*(결제|승인)?/;
+  const payInline=/([-−–])?\s*([\d][\d,]{2,})\s*원/;
+  const dotDate=/(\d{1,2})\s*\.\s*(\d{1,2})\s*\./;
   let cy=new Date().getFullYear(),cm=null,cd=null,pending='';
   const curDate=()=>(cm&&cd)?(cy+'-'+pad(cm)+'-'+pad(cd)):todayISO();
-  for(let line of raw){
+  function pushTx(amt,memo){if(amt>0&&amt<100000000){const mm=clean(memo).slice(0,24);const cat=learnedCat(mm)||guessCat(mm)||CATS[14][0];out.push({amount:amt,category:cat,memo:mm||cat,date:curDate()});}}
+
+  for(let i=0;i<raw.length;i++){
+    let line=raw[i].replace(/잔액\s*[\d,]+\s*원/g,' ').trim();
+    if(!line)continue;
+    // 날짜 헤더들 (합계는 무시, 날짜만)
     let m;
-    if((m=line.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/))&&!payRe.test(line)){cm=+m[1];cd=+m[2];pending='';continue;}  // M월 D일
-    if((m=line.match(/(\d{1,2})일\s*[월화수목금토일]요일/))){cd=+m[1];pending='';continue;}                          // 카카오 일일헤더(합계 무시)
-    if((m=line.match(/^(\d{1,2})\s*월(?!\s*\d)/))){cm=+m[1];continue;}                                                 // 월 헤더
-    if(timeRe.test(line))continue;
-    if(/^잔액/.test(line))continue;
-    const pm=line.match(payRe);
-    if(pm){const d=line.match(/(\d{1,2})\s*\.\s*(\d{1,2})\s*\./);if(d){cm=+d[1];cd=+d[2];}push(parseInt(pm[2].replace(/,/g,''),10),pending,curDate());pending='';continue;}
-    if(/^[\d,]+\s*원?$/.test(line))continue;                                                                          // 잔액/숫자 줄
-    let mc=line.includes('|')?merchantFrom(line):clean(line);
+    if((m=line.match(/(\d{1,2})일\s*[월화수목금토일]요일/))){cd=+m[1];pending='';continue;}     // 카카오 일일헤더
+    if((m=line.match(/^(\d{1,2})\s*월\s*[·•]/))){cm=+m[1];continue;}                               // 월 헤더
+    if(/^\d{1,2}:\d{2}$/.test(line))continue;
+    if(noise.test(line)){if((m=line.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/))){cm=+m[1];cd=+m[2];}continue;}
+    // 줄 안 날짜 갱신
+    if((m=line.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/))){cm=+m[1];cd=+m[2];}
+    else if((m=line.match(new RegExp(dotDate.source+'\\s*(?:\\d{1,2}:\\d{2})?\\s*결제?')))){cm=+m[1];cd=+m[2];}
+
+    // 토스: "N원 결제" → 다음 줄 "카드 | 가맹점"
+    let tp=line.match(/([\d][\d,]{2,})\s*원\s*결제/);
+    if(tp){
+      const amt=parseInt(tp[1].replace(/,/g,''),10);
+      let merchant='',jj=i;
+      for(let j=i+1;j<Math.min(i+3,raw.length);j++){
+        if(raw[j].includes('|')&&/토스|카드/.test(raw[j])){merchant=raw[j].split('|').slice(1).join(' ');jj=j;
+          if(j+1<raw.length&&/^\(/.test(raw[j+1].trim())){merchant+=' '+raw[j+1];jj=j+1;}break;}
+      }
+      pushTx(amt,merchant);pending='';i=jj;continue;
+    }
+    // 페이: 한 줄에 가맹점+금액 / 또는 금액만 (가맹점은 직전 줄)
+    let pm=line.match(payInline);
+    if(pm){
+      const amt=parseInt(pm[2].replace(/,/g,''),10);
+      let merchant=line.slice(0,pm.index);
+      // 날짜가 다음 줄에 있으면(네이버) 읽어오기
+      let dd=line.match(dotDate); if(!dd&&i+1<raw.length)dd=raw[i+1].match(dotDate);
+      if(dd){cm=+dd[1];cd=+dd[2];}
+      if(!clean(merchant))merchant=pending;
+      pushTx(amt,merchant);pending='';continue;
+    }
+    if(/^[\d,]+\s*원?$/.test(line))continue;
+    // 가맹점 후보
+    let mc=clean(line.includes('|')?line.split('|').slice(1).join(' '):line);
     if(mc&&/[가-힣A-Za-z]/.test(mc)){const o=(pending.match(/\(/g)||[]).length,c=(pending.match(/\)/g)||[]).length;pending=(pending&&o>c)?pending+' '+mc:mc;}
   }
-  if(out.length)return out;
-  // ---- 폴백: 한 줄 단건 ----
-  raw.forEach(line=>{
-    if(dayHdr.test(line)||monDay.test(line)||timeRe.test(line)||/^잔액/.test(line))return;
-    const nums=[...line.matchAll(/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,})\s*원?/g)].map(m=>parseInt(m[1].replace(/,/g,''),10)).filter(n=>!isNaN(n)&&n>0&&n<100000000);
-    if(!nums.length)return;
-    push(Math.max(...nums),clean(line.replace(/[0-9,]+\s*원?/g,' ')));
-  });
   return out;
 }
 function payDateForMonth(o,y,m){
